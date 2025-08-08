@@ -44,12 +44,33 @@ def read_root():
     return {"Hello": "World"}
 
 
+@app.get("/datos_clases_bienestar_universitario/")
+async def datos_clases(db: db_dependency):
+    clases = db.query(models.ClasesBienestarUniversitario).all()
+    return clases
 
 
-@app.post("/clases_bienestar_universitario/", response_model=ClaseBienestarUniversitario)
-def create_clase(clase: ClaseBienestarUniversitario, db: db_dependency):
-    db_clase = models.ClasesBienestarUniversitario(**clase.dict())
-    db.add(db_clase)
-    db.commit()
-    db.refresh(db_clase)
-    return db_clase
+
+
+@app.post("/clases_bienestar_universitario/")
+#endpoint para crear una clase de bienestar universitario (sigue la estructura de la clase ClaseBienestarUniversitario)
+def crear_clase(clase: ClaseBienestarUniversitario, db: db_dependency):
+    db_clase = models.ClasesBienestarUniversitario()
+
+
+
+""""
+@app.get("/clases_bienestar_universitario_nombre/", response_model=List[ClaseBienestarUniversitario])
+def buscar_clase_por_nombre(nombre: str, db: db_dependency):
+
+    Busca clases de bienestar universitario por nombre.
+
+    clases = db.query(models.ClasesBienestarUniversitario).filter(
+        models.ClasesBienestarUniversitario.nombre == nombre
+    ).all()
+    return clases
+
+
+"""
+
+

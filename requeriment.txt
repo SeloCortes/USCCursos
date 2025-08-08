@@ -1,0 +1,3 @@
+fastAPI: pip install "fastapi[standard]"
+sqlalchemy: pip install sqlalchemy
+psycopg2: pip install psycopg2-binary
