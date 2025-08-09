@@ -1,6 +1,6 @@
 
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Time, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Time, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -24,7 +24,7 @@ class Estudiante(Base):
     id = Column(Integer, ForeignKey("usuarios.id"), primary_key=True, index=True)
     carrera_id = Column(Integer, ForeignKey("carreras.id"))
 
-    usuario = relationship("Usuarios", back_populates="estudiante") #relacion con la tabla Usuario
+    usuario = relationship("Usuario", back_populates="estudiante") #relacion con la tabla Usuario
     carrera = relationship("Carrera", back_populates="estudiantes") #relacion con la tabla Carrera
 
 
@@ -35,7 +35,7 @@ class Administrativos(Base):
     area = Column(String, nullable=False)
     cargo = Column(String, nullable=False)
 
-    usuario = relationship("usuarios", back_populates="administrativo") #relacion con la tabla Usuario
+    usuario = relationship("Usuario", back_populates="administrativo") #relacion con la tabla Usuario
     
 
 
@@ -46,19 +46,26 @@ class Usuario(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True, nullable=False)
+    identificacion = Column(Integer, unique=True, nullable=False)
+    correo = Column(String, unique=True, nullable=False)
+    contraseña = Column(String, nullable=False)
 
     estudiante = relationship("Estudiante", back_populates="usuario", uselist=False) #relacion con la tabla Estudiante
-    administrativo = relationship("administrativos", back_populates="usuario", uselist=False) #relacion con la tabla Administrativo
-    inscripciones = relationship("inscripciones", back_populates="usuario")  # Relación con la tabla Inscripciones
+    administrativo = relationship("Administrativos", back_populates="usuario", uselist=False) #relacion con la tabla Administrativo
+    inscripciones = relationship("Inscripciones", back_populates="usuario")  # Relación con la tabla Inscripciones
+
+
+
+
 
 #Tabla para almacenar los datos de los tipos de cursos
-class tipo_curso(Base):
+class Tipo_curso(Base):
     __tablename__ = "tipo_curso"
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True, nullable=False)
 
-    cursos = relationship("Curso", back_populates="tipo")  # Relación con la tabla Curso
+    cursos = relationship("Curso", back_populates="tipo_curso")  # Relación con la tabla Curso
 
 
 #Tabla para almacenar los datos de los cursos
@@ -70,8 +77,10 @@ class Curso(Base):
     tipo_curso_id = Column(Integer, ForeignKey("tipo_curso.id"))
     descripcion = Column(String, nullable=True)
 
-    tipo_curso = relationship("tipo_curso", back_populates="cursos")  # Relación con la tabla tipo_curso
-    clases = relationship("clases", back_populates="cursos")  # Relación con la tabla Clases
+    tipo_curso = relationship("Tipo_curso", back_populates="cursos")  # Relación con la tabla tipo_curso
+    clases = relationship("Clases", back_populates="cursos")  # Relación con la tabla Clases
+
+
 
 #Clase enum.Enum para los días de la semana
 class DiaSemana(enum.Enum):
@@ -97,7 +106,7 @@ class Clases(Base):
     cupo_actual = Column(Integer, default=0, nullable=False)
 
     cursos = relationship("Curso", back_populates="clases")  # Relación con la tabla Curso
-    incripciones = relationship("inscripciones", back_populates="clase")  # Relación con la tabla Inscripciones
+    incripciones = relationship("Inscripciones", back_populates="clase")  # Relación con la tabla Inscripciones
 
 
 class Inscripciones(Base):
@@ -108,8 +117,12 @@ class Inscripciones(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     fecha_inscripcion = Column(DateTime, nullable=False) #DateTime alamacena fecha y hora en formato (año, mes, dia, hora, minuto)
 
-    clase = relationship("clases", back_populates="incripciones")  # Relación con la tabla Clases
-    usuario = relationship("usuarios", back_populates="inscripciones")  # Relación con la tabla Usuarios
+    __table_args__ = (
+        # Aseguramos que un usuario no pueda inscribirse en la misma clase más de una vez
+        UniqueConstraint('clase_id', 'usuario_id', name='usuario_clase_unico'), 
+    )
+
+    clase = relationship("Clases", back_populates="incripciones")  # Relación con la tabla Clases
+    usuario = relationship("Usuario", back_populates="inscripciones")  # Relación con la tabla Usuarios
 
 
-    
