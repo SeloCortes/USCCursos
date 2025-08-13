@@ -5,6 +5,9 @@ import models
 from database import engine, SessionLocal
 
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 
 app = FastAPI()
@@ -25,6 +28,16 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite cualquier origen. Para mayor seguridad, pon la URL de tu frontend.
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 
@@ -100,5 +113,5 @@ def iniciar_sesion(usuario: UsuarioLogin, db: db_dependency):
     # Verifica si el usuario existe y si la contraseña es coincide
     if not usuario or usuario.contraseña != usuario.contraseña:
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    return {"msg": "Inicio de sesión exitoso", "usuario_id": usuario.id}
+    return {"msg": "Inicio de sesión exitoso", "usuario_nombre": usuario.nombre}
 
