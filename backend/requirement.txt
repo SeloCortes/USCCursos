@@ -1,0 +1,6 @@
+fastapi==0.100.0
+uvicorn[standard]==0.22.0
+SQLAlchemy>=1.4,<3.0
+pydantic==1.10.12
+passlib[bcrypt]==1.7.4
+psycopg2-binary==2.9.7
