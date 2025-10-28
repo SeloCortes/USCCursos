@@ -85,15 +85,7 @@ class Curso(Base):
 
 # Claese Enum para los días de la semana
 class DiaSemana(enum.Enum):
-    """ Enum para los días de la semana 
-    lunes = "lunes"
-    martes = "martes"
-    miercoles = "miercoles"
-    jueves = "jueves"
-    viernes = "viernes"
-    sabado = "sabado"
-    domingo = "domingo"
-    """
+
     
     lunes = "lunes"
     martes = "martes"

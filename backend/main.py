@@ -127,13 +127,20 @@ def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
     # Verificamos la contraseña contra el hash almacenado
     if not existe_usuario or not security.verify_password(credenciales.contrasena, existe_usuario.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    
+
+    rol = db.query(models.Administrativo).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
+    if rol:
+        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"cargo": rol.cargo, }
+
+
     estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
-    semestre = estudiante.semestre if estudiante else None
-    carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
+    if estudiante: 
+        semestre = estudiante.semestre if estudiante else None
+        carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
+        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "semestre": semestre, "carera": carrera, "rol": "Estudiante" }
+    
 
-    return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "semestre": semestre, "carera": carrera, }
-
+    return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "rol": "Indefinido" }
 
 
 # Ruta para los cursos
@@ -341,10 +348,6 @@ def registrar_horario(horario: RegistrarHorario, db: Session = Depends(get_db)):
 
 
 
-
-
-
-
 # Ruta para eliminar un curso y sus horarios e inscripciones asociadas
 @app.delete("/eliminar_curso/{curso_id}")
 def eliminar_curso(curso_id: int, db: Session = Depends(get_db)):
@@ -391,4 +394,30 @@ def modificar_curso(curso_id: int, curso: RegistrarCurso, db: Session = Depends(
 
 
 # 
-
+# Ruta para modificar un rol a un usuario
+@app.post("/modificar_rol/{identificacion}")
+def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_cargo: str, db: Session = Depends(get_db)):
+    # Busca el usuario por identificación
+    usuario_existente = db.query(models.Usuario).filter(models.Usuario.identificacion == identificacion).first()
+    if not usuario_existente:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Verifica si usuario ya tiene el rol de administrativo
+    administrativo_existente = db.query(models.Administrativo).filter(models.Administrativo.id == usuario_existente.identificacion).first()
+    
+    # Si existe rol en administrativo eliminamos el rol
+    if administrativo_existente:
+        db.delete(administrativo_existente)
+        db.commit()
+        return {"msg": "Rol de administrativo eliminado correctamente", "usuario_id": usuario_existente.identificacion}
+    else:
+        # Si no existe, creamos el rol de administrativo
+        nuevo_administrativo = models.Administrativo(
+            id=usuario_existente.id,
+            area=nuevo_rol,
+            cargo=nuevo_cargo
+        )
+        db.add(nuevo_administrativo)
+        db.commit()
+        db.refresh(nuevo_administrativo)
+        return {"msg": "Rol de administrativo asignado correctamente", "usuario_id": usuario_existente.identificacion}
