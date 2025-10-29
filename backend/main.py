@@ -285,9 +285,10 @@ def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, d
 
 # Endpoints para administradores
 
-# Generar reporte de cursos, horarios e inscripciones con informacion de usuarios (con opcion de solo sacar/filtar por tipo curso)
-@app.get("/reporte_cursos")
-def reporte_cursos(tipo_curso: Union[models.TipoCurso, None] = None, db: Session = Depends(get_db)):
+
+# Ruta para reporte de cursos, horarios, inscripciones y usuarios
+@app.get("/reporte_cursos/{identificacion}")
+def reporte_cursos(identificacion: int, tipo_curso: Union[models.TipoCurso, None] = None,  db: Session = Depends(get_db)):
     query = db.query(models.Curso)
     if tipo_curso:
         query = query.filter(models.Curso.tipo_curso == tipo_curso)
@@ -425,6 +426,24 @@ def eliminar_curso(curso_id: int, db: Session = Depends(get_db)):
     db.delete(curso_existente)
     db.commit()  # Guarda los cambios en la BD
     return {"msg": "Curso eliminado correctamente", "curso_id": curso_id}
+
+
+
+# Ruta para eliminar un horario y sus inscripciones asociadas
+@app.delete("/eliminar_horario/{horario_id}") 
+def eliminar_horario(horario_id: int, db: Session = Depends(get_db)):
+    # Busca el horario por ID
+    horario_existente = db.query(models.Horario).filter(models.Horario.id == horario_id).first()
+    if not horario_existente:
+        raise HTTPException(status_code=404, detail="Horario no encontrado")
+    
+    # Elimina inscripciones asociadas al horario
+    db.query(models.Inscripcion).filter(models.Inscripcion.horario_id == horario_id).delete()
+    
+    # Elimina el horario
+    db.delete(horario_existente)
+    db.commit()  # Guarda los cambios en la BD
+    return {"msg": "Horario eliminado correctamente", "horario_id": horario_id}
 
 
 
