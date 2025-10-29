@@ -36,7 +36,7 @@ class Administrativo(Base):
 
     id = Column(Integer, ForeignKey("usuario.id"), primary_key=True, index=True)
     area = Column(String, nullable=False)
-    cargo = Column(String, nullable=False)
+    rol = Column(String, nullable=False)
 
     usuario = relationship("Usuario", back_populates="administrativo") # Relación con la tabla Usuario
     

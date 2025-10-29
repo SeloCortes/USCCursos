@@ -130,7 +130,7 @@ def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
 
     rol = db.query(models.Administrativo).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     if rol:
-        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"rol": rol.cargo}
+        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"rol": rol.rol}
 
 
     estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
@@ -452,7 +452,7 @@ def modificar_curso(curso_id: int, curso: RegistrarCurso, db: Session = Depends(
 
 # Ruta para modificar el rol de un usuario
 @app.post("/modificar_rol/{identificacion}")
-def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_cargo: str, db: Session = Depends(get_db)):
+def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_area: str, db: Session = Depends(get_db)):
     # Busca el usuario por identificación
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.identificacion == identificacion).first()
     if not usuario_existente:
@@ -471,7 +471,7 @@ def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_cargo: str, db: Ses
         nuevo_administrativo = models.Administrativo(
             id=usuario_existente.id,
             area=nuevo_rol,
-            cargo=nuevo_cargo
+            rol=nuevo_area
         )
         db.add(nuevo_administrativo)
         db.commit()
