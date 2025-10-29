@@ -297,7 +297,6 @@ def reporte_cursos(tipo_curso: Union[models.TipoCurso, None] = None, db: Session
 
     for curso in cursos:
         curso_info = {
-            "id": curso.id,
             "nombre": curso.nombre,
             "tipo_curso": curso.tipo_curso,
             "horarios": []
@@ -305,7 +304,6 @@ def reporte_cursos(tipo_curso: Union[models.TipoCurso, None] = None, db: Session
 
         for horario in curso.horario:
             horario_info = {
-                "id": horario.id,
                 "dia": horario.dia.value if hasattr(horario.dia, 'value') else str(horario.dia),
                 "hora_inicio": horario.hora_inicio.isoformat() if horario.hora_inicio else None,
                 "hora_fin": horario.hora_fin.isoformat() if horario.hora_fin else None,
@@ -317,13 +315,11 @@ def reporte_cursos(tipo_curso: Union[models.TipoCurso, None] = None, db: Session
             for inscripcion in horario.inscripcion:
                 usuario = db.query(models.Usuario).filter(models.Usuario.id == inscripcion.usuario_id).first()
                 usuario_info = {
-                    "id": usuario.id,
                     "nombre": usuario.nombre,
                     "identificacion": usuario.identificacion,
                     "correo": usuario.correo
                 }
                 inscripcion_info = {
-                    "id": inscripcion.id,
                     "usuario": usuario_info,
                     "fecha_inscripcion": inscripcion.fecha_inscripcion.isoformat() if inscripcion.fecha_inscripcion else None,
                 }
