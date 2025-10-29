@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-#Crea todas las tablas en columnas en postgreSQL
+# Crea todas las tablas en la base de datos (PostgreSQL)
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -90,7 +90,7 @@ class UsuarioRegistrar(BaseModel):
 # Ruta para registrar un nuevo usuario
 @app.post("/registrar_usuario")
 def registrar_usuario(usuario: UsuarioRegistrar, db: Session = Depends(get_db)):
-    # Busca en la BD si el usuario ya existe por identificacion o correo
+    # Busca en la db si el usuario ya existe por identificación o correo
     existe = db.query(models.Usuario).filter(
         (models.Usuario.identificacion == usuario.identificacion) |
         (models.Usuario.correo == usuario.correo)
@@ -99,7 +99,7 @@ def registrar_usuario(usuario: UsuarioRegistrar, db: Session = Depends(get_db)):
     if existe:
         raise HTTPException(status_code=400, detail="Usuario ya existe")
     
-    # De lo contrario crea un nuevo usuario
+    # En caso contrario, crea un nuevo usuario
     nuevo_usuario = models.Usuario(
         nombre=usuario.nombre,
         identificacion=usuario.identificacion,
@@ -122,7 +122,7 @@ class UsuarioLogin(BaseModel):
 # Ruta para iniciar sesión
 @app.post("/iniciar_sesion")
 def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
-    # Busca en la BD si el usuario existe por identificacion
+    # Busca en la BD si el usuario existe por identificación
     existe_usuario = db.query(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     # Verificamos la contraseña contra el hash almacenado
     if not existe_usuario or not security.verify_password(credenciales.contrasena, existe_usuario.contrasena):
@@ -130,14 +130,14 @@ def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
 
     rol = db.query(models.Administrativo).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     if rol:
-        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"cargo": rol.cargo, }
+        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"rol": rol.cargo}
 
 
     estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
-    if estudiante: 
+    if estudiante:
         semestre = estudiante.semestre if estudiante else None
         carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
-        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "semestre": semestre, "carera": carrera, "rol": "Estudiante" }
+        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "semestre": semestre, "carrera": carrera, "rol": "Estudiante"}
     
 
     return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "rol": "Indefinido" }
@@ -177,15 +177,18 @@ def obtener_horarios_curso(curso_id: int, identificacion: int, db: Session = Dep
     horarios_q = db.query(models.Horario).filter(models.Horario.curso_id == curso_id).all()
     horarios = []
 
-    # Si se pasó identificación del usuario, obtenemos el usuario (si existe)
-    if identificacion is not None:
-        usuario = db.query(models.Usuario).filter(models.Usuario.identificacion == identificacion).first()
+
+    usuario = db.query(models.Usuario).filter(models.Usuario.identificacion == identificacion).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail='Usuario no encontrado')
+
+
 
     for hor in horarios_q:
         # Determinar si el horario está activo
         horario_activo = bool(getattr(hor, 'activo', True))
 
-        # Cupo disponible: en tu modelo se llama 'cupo_disponible'
+        # Cupo disponible
         cupo_disponible = getattr(hor, 'cupo_disponible', None)
 
         # Validamos si el usuario ya está inscrito en este horario
@@ -197,7 +200,6 @@ def obtener_horarios_curso(curso_id: int, identificacion: int, db: Session = Dep
                 models.Inscripcion.usuario_id == usuario.id
             ).first()
             inscrito = True if existe else False
-
 
 
         horarios.append({
@@ -214,7 +216,7 @@ def obtener_horarios_curso(curso_id: int, identificacion: int, db: Session = Dep
 
 
 
-# Ruta para inscribirse o cancelar inscripción en un horario de un curso
+# Ruta para inscribirse o cancelar la inscripción en un horario de un curso
 @app.post('/horario/{horario_id},{curso_id}/inscripcion')
 def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, db: Session = Depends(get_db)):
     # Verificamos que el usuario exista
@@ -280,7 +282,7 @@ def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, d
 
 
 
-# Endpoint para admistradores
+# Endpoints para administradores
 
 
 # Modelo para registrar un curso
@@ -306,7 +308,7 @@ def registrar_curso(curso: RegistrarCurso, db: Session = Depends(get_db)):
     db.add(nuevo_curso) # Añade el nuevo curso a la sesion de la BD
     db.commit() # Guarda los cambios en la BD
     db.refresh(nuevo_curso)  #Actualiza el objeto nuevo_usuario con los datos de la BD
-    return {"msg": "Curso registrado correctamente", "curso_id": nuevo_curso.id} 
+    return {"msg": "Curso registrado correctamente", "curso_id": nuevo_curso.id}
 
 
 
@@ -371,7 +373,7 @@ def eliminar_curso(curso_id: int, db: Session = Depends(get_db)):
 
 
 
-# Ruta para modificar un curso o eliminarlo
+# Ruta para modificar un curso
 @app.put("/modificar_curso/{curso_id}")
 def modificar_curso(curso_id: int, curso: RegistrarCurso, db: Session = Depends(get_db)):
     # Busca el curso por ID
@@ -393,8 +395,7 @@ def modificar_curso(curso_id: int, curso: RegistrarCurso, db: Session = Depends(
 
 
 
-# 
-# Ruta para modificar un rol a un usuario
+# Ruta para modificar el rol de un usuario
 @app.post("/modificar_rol/{identificacion}")
 def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_cargo: str, db: Session = Depends(get_db)):
     # Busca el usuario por identificación
