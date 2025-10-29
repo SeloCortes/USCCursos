@@ -143,9 +143,10 @@ def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
     return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "rol": "Indefinido" }
 
 
+
 # Ruta para los cursos
 @app.get('/cursos')
-def listar_cursos(identificacion: int, db: Session = Depends(get_db)):
+def listar_cursos(db: Session = Depends(get_db)):
     cursos = db.query(models.Curso).all()
 
     lista_cursos = []
@@ -283,6 +284,64 @@ def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, d
 
 
 # Endpoints para administradores
+
+# Generar reporte de cursos, horarios e inscripciones con informacion de usuarios (con opcion de solo sacar/filtar por tipo curso)
+@app.get("/reporte_cursos")
+def reporte_cursos(tipo_curso: Union[models.TipoCurso, None] = None, db: Session = Depends(get_db)):
+    query = db.query(models.Curso)
+    if tipo_curso:
+        query = query.filter(models.Curso.tipo_curso == tipo_curso)
+    
+    cursos = query.all()
+    reporte = []
+
+    for curso in cursos:
+        curso_info = {
+            "id": curso.id,
+            "nombre": curso.nombre,
+            "tipo_curso": curso.tipo_curso,
+            "horarios": []
+        }
+
+        for horario in curso.horario:
+            horario_info = {
+                "id": horario.id,
+                "dia": horario.dia.value if hasattr(horario.dia, 'value') else str(horario.dia),
+                "hora_inicio": horario.hora_inicio.isoformat() if horario.hora_inicio else None,
+                "hora_fin": horario.hora_fin.isoformat() if horario.hora_fin else None,
+                "profesor": horario.profesor,
+                "cantidad de matriculados": len(horario.inscripcion) if horario.inscripcion else 0,
+                "inscripciones": []
+            }
+
+            for inscripcion in horario.inscripcion:
+                usuario = db.query(models.Usuario).filter(models.Usuario.id == inscripcion.usuario_id).first()
+                usuario_info = {
+                    "id": usuario.id,
+                    "nombre": usuario.nombre,
+                    "identificacion": usuario.identificacion,
+                    "correo": usuario.correo
+                }
+                inscripcion_info = {
+                    "id": inscripcion.id,
+                    "usuario": usuario_info,
+                    "fecha_inscripcion": inscripcion.fecha_inscripcion.isoformat() if inscripcion.fecha_inscripcion else None,
+                }
+                horario_info["inscripciones"].append(inscripcion_info)
+
+            curso_info["horarios"].append(horario_info)
+
+        reporte.append(curso_info)
+
+    return reporte
+
+
+
+
+
+
+
+
 
 
 # Modelo para registrar un curso
