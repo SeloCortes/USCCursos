@@ -204,6 +204,7 @@ def obtener_horarios_curso(curso_id: int, identificacion: int, db: Session = Dep
 
 
         horarios.append({
+            'id': hor.id,
             'dia': hor.dia.value if hasattr(hor.dia, 'value') else str(hor.dia),
             'hora_inicio': hor.hora_inicio.isoformat() if hor.hora_inicio else None,
             'hora_fin': hor.hora_fin.isoformat() if hor.hora_fin else None,
