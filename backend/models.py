@@ -86,12 +86,14 @@ class Curso(Base):
 # Claese Enum para los días de la semana
 class DiaSemana(enum.Enum):
 
-    Lunes = "Lunes"
-    Martes = "Martes"
-    Miércoles = "Miércoles"
-    Jueves = "Jueves"
-    Viernes = "Viernes"
-    Sábado = "Sábado"
+    
+    lunes = "lunes"
+    martes = "martes"
+    miercoles = "miercoles"
+    jueves = "jueves"
+    viernes = "viernes"
+    sabado = "sabado"
+    domingo = "domingo"
 
 
 # Tabla para almacenar los datos de horario
