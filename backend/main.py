@@ -1,9 +1,12 @@
 
 import security
 import models
+import io
+from openpyxl import Workbook
+from fastapi.responses import StreamingResponse
 
 from typing import Union, List, Annotated
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Response
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from datetime import time, datetime
 from enum import Enum
@@ -40,22 +43,12 @@ db_dependency = Annotated[Session, Depends(get_db)]
 app.add_middleware(
     CORSMiddleware,
     # Temporalmente permitir todos los orígenes para depuración. Revertir a origen específico en producción.
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=["https://prueba-9bc0e.web.app/"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-"""#pendiente revisar si es necesario este middleware
-@app.middleware("http")
-async def add_cors_header(request, call_next):
-    # Middleware de respaldo: asegura que la cabecera CORS esté presente en todas las respuestas
-    response = await call_next(request)
-    # Nota: esto es un parche temporal para depuración.
-    response.headers.setdefault('Access-Control-Allow-Origin', '*')
-    return response
-"""
 
 
 
@@ -119,28 +112,54 @@ class UsuarioLogin(BaseModel):
     identificacion: int
     contrasena: str
 
-# Ruta para iniciar sesión
+# Ruta para iniciar sesión (ahora emite JWT)
 @app.post("/iniciar_sesion")
-def iniciar_sesion(credenciales: UsuarioLogin, db: Session = Depends(get_db)):
+def iniciar_sesion(credenciales: UsuarioLogin, response: Response, db: Session = Depends(get_db)):
     # Busca en la BD si el usuario existe por identificación
     existe_usuario = db.query(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     # Verificamos la contraseña contra el hash almacenado
     if not existe_usuario or not security.verify_password(credenciales.contrasena, existe_usuario.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
 
+    # Construimos la información que devolveremos al frontend
+    usuario_info = {"usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion}
+
     rol = db.query(models.Administrativo).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     if rol:
-        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "area": rol.area ,"rol": rol.rol}
+        usuario_info.update({"area": rol.area, "rol": rol.rol})
+    else:
+        estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
+        if estudiante:
+            semestre = estudiante.semestre if estudiante else None
+            carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
+            usuario_info.update({"semestre": semestre, "carrera": carrera, "rol": "Estudiante"})
+        else:
+            usuario_info.update({"rol": "Indefinido"})
 
+    # Payload mínimo para el token (puedes añadir más claims si los necesitas)
+    token_payload = {
+        "sub": str(existe_usuario.identificacion),
+        "usuario_nombre": existe_usuario.nombre,
+        "identificacion": existe_usuario.identificacion,
+        "rol": usuario_info.get("rol"),
+        "area": usuario_info.get("area")
+    }
 
-    estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
-    if estudiante:
-        semestre = estudiante.semestre if estudiante else None
-        carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
-        return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "semestre": semestre, "carrera": carrera, "rol": "Estudiante"}
-    
+    access_token = security.create_access_token(token_payload)
 
-    return {"msg": "Inicio de sesión exitoso", "usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion, "rol": "Indefinido" }
+    # Opcional: establecer cookie HttpOnly (más segura que exponer token en localStorage)
+    # En producción configurar `secure=True` y usar HTTPS
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    # Devolvemos el token y la info del usuario (frontend puede preferir usar solo la cookie)
+    return {"msg": "Inicio de sesión exitoso", **usuario_info, "access_token": access_token, "token_type": "bearer"}
 
 
 
@@ -332,6 +351,79 @@ def reporte_cursos(identificacion: int, tipo_curso: Union[models.TipoCurso, None
         reporte.append(curso_info)
 
     return reporte
+
+
+
+@app.get("/reporte_cursos/{identificacion}/excel")
+def reporte_cursos_excel(identificacion: int, tipo_curso: Union[models.TipoCurso, None] = None, db: Session = Depends(get_db)):
+    """Genera un archivo Excel (.xlsx) con el mismo contenido que devuelve `/reporte_cursos`.
+    Se crea una hoja por curso; cada fila representa un horario y sus inscripciones (si las hay).
+    Devuelve un StreamingResponse con el archivo para descarga.
+    """
+    query = db.query(models.Curso)
+    if tipo_curso:
+        query = query.filter(models.Curso.tipo_curso == tipo_curso)
+
+    cursos = query.all()
+
+    wb = Workbook()
+    # Si hay al menos un curso, eliminamos la hoja por defecto y creamos por curso
+    if cursos:
+        # eliminar hoja por defecto
+        default = wb.active
+        wb.remove(default)
+
+        for curso in cursos:
+            # sheet title max 31 chars
+            title = f"{curso.id}_{curso.nombre}"[:31]
+            ws = wb.create_sheet(title=title)
+            # Encabezados
+            ws.append(["Dia", "Hora Inicio", "Hora Fin", "Profesor", "Cantidad Matriculados", "Usuario Nombre", "Identificacion", "Correo", "Fecha Inscripcion"])
+
+            for horario in curso.horario:
+                cantidad = len(horario.inscripcion) if horario.inscripcion else 0
+                # Si hay inscripciones, escribir una fila por cada inscripcion
+                if horario.inscripcion:
+                    for inscripcion in horario.inscripcion:
+                        usuario = db.query(models.Usuario).filter(models.Usuario.id == inscripcion.usuario_id).first()
+                        ws.append([
+                            horario.dia.value if hasattr(horario.dia, 'value') else str(horario.dia),
+                            horario.hora_inicio.isoformat() if horario.hora_inicio else None,
+                            horario.hora_fin.isoformat() if horario.hora_fin else None,
+                            horario.profesor,
+                            cantidad,
+                            usuario.nombre if usuario else None,
+                            usuario.identificacion if usuario else None,
+                            usuario.correo if usuario else None,
+                            inscripcion.fecha_inscripcion.isoformat() if inscripcion.fecha_inscripcion else None
+                        ])
+                else:
+                    # Sin inscripciones, una sola fila con columnas de usuario vacías
+                    ws.append([
+                        horario.dia.value if hasattr(horario.dia, 'value') else str(horario.dia),
+                        horario.hora_inicio.isoformat() if horario.hora_inicio else None,
+                        horario.hora_fin.isoformat() if horario.hora_fin else None,
+                        horario.profesor,
+                        cantidad,
+                        None,
+                        None,
+                        None,
+                        None
+                    ])
+    else:
+        # Sin cursos: dejar una hoja con un mensaje
+        ws = wb.active
+        ws.title = "Reporte"
+        ws.append(["No hay cursos para el filtro especificado"]) 
+
+    # Guardar en buffer y devolver como streaming
+    stream = io.BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+
+    filename = f"reporte_cursos_{identificacion}.xlsx"
+    headers = {"Content-Disposition": f"attachment; filename={filename}"}
+    return StreamingResponse(stream, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
 
 
 
