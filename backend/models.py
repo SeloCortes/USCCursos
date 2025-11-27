@@ -53,7 +53,7 @@ class TipoNombreCarrera(enum.Enum):
 
     licenciatura_en_educacion_infantil = "Educacion Infantil"
     licenciatura_en_educacion_fisica_y_deporte = "Educacion Fisica"
-    licenciatura_en_lenguas_extranjeras_con_enfasis_en_ingles_frances = "Lenguas Extranjeras con enfasis en Ingles - Frances"
+    licenciatura_en_lenguas_extranjeras = "Lenguas Extranjeras con enfasis en Ingles - Frances"
 
     quimica = "Quimica"
     microbiologia = "Microbiologia"
