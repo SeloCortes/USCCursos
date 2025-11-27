@@ -1,0 +1,5 @@
+TO DO 
+
+Investigar para realizar una funcion para programar cierre de los cursos y horarios, 
+
+Cambiar Class 'Cursos' para que la variable imagen permita subir un archivo y no sea una URL.

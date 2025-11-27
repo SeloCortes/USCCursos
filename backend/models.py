@@ -8,13 +8,124 @@ from database import Base
 
 
 
-# Tabla para almacenar los datos de carrera
-class Carrera(Base):
-    __tablename__ = "carrera"
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True, nullable=False)
+# Clase Enum para los tipos de facultad
+class TipoFacultad(enum.Enum):
+    """ Enum para los tipos de facultad
+    salud = "Salud"
+    derecho = "Derecho"
+    ingenieria = "Ingenieria"
+    educacion = "Educacion"
+    ciencias_basicas = "Ciencias Basicas"
+    ciencias_economicas_y_empresariales = "Ciencias Economicas y Empresariales"    
+    """
+    salud = "Salud"
+    derecho = "Derecho"
+    ingenieria = "Ingenieria"
+    educacion = "Educacion"
+    ciencias_basicas = "Ciencias Basicas"
+    humanidades_y_artes = "Humanidades y Artes"
+    ciencias_economicas_y_empresariales = "Ciencias Economicas y Empresariales"
 
-    estudiante = relationship("Estudiante", back_populates="carrera") # Relación con la tabla estudiante
+class TipoNombreCarreraSalud(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de salud
+    medicina = "Medicina"
+    enfermeria = "Enfermeria"
+    fisioterapia = "Fisioterapia"
+    odontologia = "Odontologia"
+    psicologia = "Psicologia"
+    fonoaudiologia = "Fonoaudiologia"
+    terapia_respiratoria = "Terapia Respiratoria"
+    instrumentacion_quirurgica = "Instrumentacion Quirurgica"
+    """
+    medicina = "Medicina"
+    enfermeria = "Enfermeria"
+    fisioterapia = "Fisioterapia"
+    odontologia = "Odontologia"
+    psicologia = "Psicologia"
+    fonoaudiologia = "Fonoaudiologia"
+    terapia_respiratoria = "Terapia Respiratoria"
+    instrumentacion_quirurgica = "Instrumentacion Quirurgica"
+
+class TipoNombreCarreraDerecho(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de derecho
+    derecho = "Derecho"
+    ciencia_politica = "Ciencia Politica"
+    """
+    derecho = "Derecho"
+    ciencia_politica = "Ciencia Politica"
+
+class TipoNombreCarreraIngenieria(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de ingenieria
+    bioingenieria = "Bioingenieria"
+    ingenieria_civil = "Ingenieria Civil"
+    ingenieria_quimica = "Ingenieria Quimica"
+    ingenieria_industrial = "Ingenieria Industrial"
+    ingenieria_comercial = "Ingenieria Comercial"
+    ingenieria_electronica = "Ingenieria Electronica"
+    ingenieria_en_energias = "Ingenieria en Energias"
+    ingenieria_en_sistemas = "Ingenieria en Sistemas"
+    """
+    bioingenieria = "Bioingenieria"
+    ingenieria_civil = "Ingenieria Civil"
+    ingenieria_quimica = "Ingenieria Quimica"
+    ingenieria_industrial = "Ingenieria Industrial"
+    ingenieria_comercial = "Ingenieria Comercial"
+    ingenieria_electronica = "Ingenieria Electronica"
+    ingenieria_en_energias = "Ingenieria en Energias"
+    ingenieria_en_sistemas = "Ingenieria en Sistemas"
+
+class TipoNombreCarreraEducacion(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de educacion
+    licenciatura_en_educacion_infantil = "Educacion Infantil"
+    licenciatura_en_educacion_fisica_y_deporte = "Educacion Fisica"
+    licenciatura_en_lenguas_extranjeras_con_enfasis_en_ingles_frances = "Lenguas Extranjeras con enfasis en Ingles - Frances"
+    """
+    licenciatura_en_educacion_infantil = "Educacion Infantil"
+    licenciatura_en_educacion_fisica_y_deporte = "Educacion Fisica"
+    licenciatura_en_lenguas_extranjeras_con_enfasis_en_ingles_frances = "Lenguas Extranjeras con enfasis en Ingles - Frances"
+
+class TipoNombreCarreraCienciasBasicas(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de ciencias basicas
+    quimica = "Quimica"
+    microbiologia = "Microbiologia"
+    medicina_veterinaria = "Medicina Veterinaria"
+    quimica_farmaceutica = "Quimica Farmaceutica"
+    """
+    quimica = "Quimica"
+    microbiologia = "Microbiologia"
+    medicina_veterinaria = "Medicina Veterinaria"
+    quimica_farmaceutica = "Quimica Farmaceutica"
+
+class TipoNombreCarreraHumanidadesYArtes(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de humanidades y artes
+    publicidad = "Publicidad"
+    trabajo_social = "Trabajo Social"
+    comunicacion_social = "Comunicacion Social"
+    """
+    publicidad = "Publicidad"
+    trabajo_social = "Trabajo Social"
+    comunicacion_social = "Comunicacion Social"
+
+class TipoNombreCarreraCienciasEconomicasYEmpresariales(enum.Enum):
+    """ Enum para los nombres de las carreras de la facultad de ciencias economicas y empresariales
+    economia = "Economia"
+    mercadeo = "Mercadeo"
+    contaduria_publica = "Contaduria Publica"
+    administracion_de_empresas = "Administracion de Empresas"
+    finanzas_y_negocios_internacionales = "Finanzas y Negocios Internacionales"
+    """
+    economia = "Economia"
+    mercadeo = "Mercadeo"
+    contaduria_publica = "Contaduria Publica"
+    administracion_de_empresas = "Administracion de Empresas"
+    finanzas_y_negocios_internacionales = "Finanzas y Negocios Internacionales"
+
+
+
+
+
+
+
 
 
 # Tabla para almacenar los datos de estudiante
@@ -23,37 +134,82 @@ class Estudiante(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuario.identificacion"), unique=True, nullable=False)
-    carrera_id = Column(Integer, ForeignKey("carrera.id") , nullable=True)
+    facultad = Column(Enum(TipoFacultad, name="tipo_facultad_enum"), nullable=False) 
+    nombre_carrera = Column(Enum(TipoNombreCarreraSalud, TipoNombreCarreraDerecho, TipoNombreCarreraIngenieria, TipoNombreCarreraEducacion, TipoNombreCarreraCienciasBasicas, TipoNombreCarreraHumanidadesYArtes, TipoNombreCarreraCienciasEconomicasYEmpresariales, name="tipo_nombre_carrera_enum"), nullable=False)
     semestre = Column(Integer, nullable=False)
 
     usuario = relationship("Usuario", back_populates="estudiante") # Relación con la tabla Usuario
-    carrera = relationship("Carrera", back_populates="estudiante") # Relación con la tabla Carrera
 
 
+
+# Clase Enum para los tipos de rol administrativo
+class TipoRol(enum.Enum):
+    """ Enum para los tipos de rol administrativo
+    admin = "admin"
+    coordinador = "coordinador"
+    administrativo = "administrativo"    
+    """
+    admin = "admin"
+    coordinador = "coordinador"
+    administrativo = "administrativo"
 # Tabla para almacenar los datos de administrativo
 class Administrativo(Base):
     __tablename__ = "administrativo"
 
     id = Column(Integer, ForeignKey("usuario.id"), primary_key=True, index=True)
     area = Column(String, nullable=False)
-    rol = Column(String, nullable=False)
+    rol = Column(Enum(TipoRol, name="tipo_rol_enum"), nullable=False) 
 
     usuario = relationship("Usuario", back_populates="administrativo") # Relación con la tabla Usuario
-    
 
+
+
+# Clase Enum para los tipos de estamento tercero
+class TipoEstamento(enum.Enum):
+    """ Enum para los tipos de estamento tercero
+    egresado = "egresado"
+    profesor = "profesor"
+    asistente = "asistente"   
+    """
+    egresado = "egresado"
+    profesor = "profesor"
+    asistente = "asistente"
+#Tabla para usuarios terceros
+class Tercero(Base):
+    __tablename__ = "tercero"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estamento = Column(Enum(TipoEstamento, name="tipo_estamento_enum"), nullable=False)
+
+
+
+class TipoGenero(enum.Enum):
+    """ Enum para los tipos de genero
+    masculino = "masculino"
+    femenino = "femenino"
+    otro = "otro"   
+    """
+    masculino = "masculino"
+    femenino = "femenino"
+    otro = "otro"
 # Tabla para almacenar los datos de usuario
 class Usuario(Base):
     __tablename__ = "usuario"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True, nullable=False)
+    nombre_apellido = Column(String, index=True, nullable=False)
     identificacion = Column(Integer, unique=True, nullable=False)
     correo = Column(String, unique=True, nullable=False)
     contrasena = Column(String, nullable=False)
+    telefono = Column(String, nullable=True)
+    genero = Column(Enum(TipoGenero, name="tipo_genero_enum"), nullable=True)
+    etnia = Column(String, nullable=True)
+    discapacidad = Column(String, nullable=True)
 
     estudiante = relationship("Estudiante", back_populates="usuario", uselist=False) # Relación con la tabla Estudiante
     administrativo = relationship("Administrativo", back_populates="usuario", uselist=False) # Relación con la tabla Administrativo
     inscripcion = relationship("Inscripcion", back_populates="usuario")  # Relación con la tabla Inscripcion
+
 
 
 # Clase Enum para los tipos de curso
@@ -66,8 +222,6 @@ class TipoCurso(enum.Enum):
     deporte = "Deporte Formativo"
     arte = "Arte y Cultura"
     catedra = "Catedra Santiaguina"
-
-
 # Tabla para almacenar los datos de curso
 class Curso(Base):
     __tablename__ = "curso"
@@ -124,7 +278,6 @@ class Inscripcion(Base):
     horario_id = Column(Integer, ForeignKey("horario.id"))
     usuario_id = Column(Integer, ForeignKey("usuario.id"))
     fecha_inscripcion = Column(DateTime, nullable=False) # DateTime almacena fecha y hora en formato (año, mes, dia, hora, minuto)
-    estado = Column(Boolean, default=False, nullable=False)  # Indica si el usuario está inscrito o no
 
     __table_args__ = (
         # Aseguramos que un usuario no pueda inscribirse en la misma clase más de una vez
