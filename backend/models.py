@@ -26,16 +26,9 @@ class TipoFacultad(enum.Enum):
     humanidades_y_artes = "Humanidades y Artes"
     ciencias_economicas_y_empresariales = "Ciencias Economicas y Empresariales"
 
-class TipoNombreCarreraSalud(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de salud
-    medicina = "Medicina"
-    enfermeria = "Enfermeria"
-    fisioterapia = "Fisioterapia"
-    odontologia = "Odontologia"
-    psicologia = "Psicologia"
-    fonoaudiologia = "Fonoaudiologia"
-    terapia_respiratoria = "Terapia Respiratoria"
-    instrumentacion_quirurgica = "Instrumentacion Quirurgica"
+# Clase Enum para los nombres de las carreras
+class TipoNombreCarrera(enum.Enum):
+    """ Enum para los nombres de las carreras de todas las facultades
     """
     medicina = "Medicina"
     enfermeria = "Enfermeria"
@@ -46,25 +39,9 @@ class TipoNombreCarreraSalud(enum.Enum):
     terapia_respiratoria = "Terapia Respiratoria"
     instrumentacion_quirurgica = "Instrumentacion Quirurgica"
 
-class TipoNombreCarreraDerecho(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de derecho
-    derecho = "Derecho"
-    ciencia_politica = "Ciencia Politica"
-    """
     derecho = "Derecho"
     ciencia_politica = "Ciencia Politica"
 
-class TipoNombreCarreraIngenieria(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de ingenieria
-    bioingenieria = "Bioingenieria"
-    ingenieria_civil = "Ingenieria Civil"
-    ingenieria_quimica = "Ingenieria Quimica"
-    ingenieria_industrial = "Ingenieria Industrial"
-    ingenieria_comercial = "Ingenieria Comercial"
-    ingenieria_electronica = "Ingenieria Electronica"
-    ingenieria_en_energias = "Ingenieria en Energias"
-    ingenieria_en_sistemas = "Ingenieria en Sistemas"
-    """
     bioingenieria = "Bioingenieria"
     ingenieria_civil = "Ingenieria Civil"
     ingenieria_quimica = "Ingenieria Quimica"
@@ -74,59 +51,24 @@ class TipoNombreCarreraIngenieria(enum.Enum):
     ingenieria_en_energias = "Ingenieria en Energias"
     ingenieria_en_sistemas = "Ingenieria en Sistemas"
 
-class TipoNombreCarreraEducacion(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de educacion
-    licenciatura_en_educacion_infantil = "Educacion Infantil"
-    licenciatura_en_educacion_fisica_y_deporte = "Educacion Fisica"
-    licenciatura_en_lenguas_extranjeras_con_enfasis_en_ingles_frances = "Lenguas Extranjeras con enfasis en Ingles - Frances"
-    """
     licenciatura_en_educacion_infantil = "Educacion Infantil"
     licenciatura_en_educacion_fisica_y_deporte = "Educacion Fisica"
     licenciatura_en_lenguas_extranjeras_con_enfasis_en_ingles_frances = "Lenguas Extranjeras con enfasis en Ingles - Frances"
 
-class TipoNombreCarreraCienciasBasicas(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de ciencias basicas
-    quimica = "Quimica"
-    microbiologia = "Microbiologia"
-    medicina_veterinaria = "Medicina Veterinaria"
-    quimica_farmaceutica = "Quimica Farmaceutica"
-    """
     quimica = "Quimica"
     microbiologia = "Microbiologia"
     medicina_veterinaria = "Medicina Veterinaria"
     quimica_farmaceutica = "Quimica Farmaceutica"
 
-class TipoNombreCarreraHumanidadesYArtes(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de humanidades y artes
-    publicidad = "Publicidad"
-    trabajo_social = "Trabajo Social"
-    comunicacion_social = "Comunicacion Social"
-    """
     publicidad = "Publicidad"
     trabajo_social = "Trabajo Social"
     comunicacion_social = "Comunicacion Social"
 
-class TipoNombreCarreraCienciasEconomicasYEmpresariales(enum.Enum):
-    """ Enum para los nombres de las carreras de la facultad de ciencias economicas y empresariales
     economia = "Economia"
     mercadeo = "Mercadeo"
     contaduria_publica = "Contaduria Publica"
     administracion_de_empresas = "Administracion de Empresas"
     finanzas_y_negocios_internacionales = "Finanzas y Negocios Internacionales"
-    """
-    economia = "Economia"
-    mercadeo = "Mercadeo"
-    contaduria_publica = "Contaduria Publica"
-    administracion_de_empresas = "Administracion de Empresas"
-    finanzas_y_negocios_internacionales = "Finanzas y Negocios Internacionales"
-
-
-
-
-
-
-
-
 
 # Tabla para almacenar los datos de estudiante
 class Estudiante(Base):
@@ -135,7 +77,7 @@ class Estudiante(Base):
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuario.identificacion"), unique=True, nullable=False)
     facultad = Column(Enum(TipoFacultad, name="tipo_facultad_enum"), nullable=False) 
-    nombre_carrera = Column(Enum(TipoNombreCarreraSalud, TipoNombreCarreraDerecho, TipoNombreCarreraIngenieria, TipoNombreCarreraEducacion, TipoNombreCarreraCienciasBasicas, TipoNombreCarreraHumanidadesYArtes, TipoNombreCarreraCienciasEconomicasYEmpresariales, name="tipo_nombre_carrera_enum"), nullable=False)
+    nombre_carrera = Column(Enum(TipoNombreCarrera, name="tipo_nombre_carrera_enum"), nullable=False)
     semestre = Column(Integer, nullable=False)
 
     usuario = relationship("Usuario", back_populates="estudiante") # Relación con la tabla Usuario
