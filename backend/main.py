@@ -94,7 +94,7 @@ def registrar_usuario(usuario: UsuarioRegistrar, db: Session = Depends(get_db)):
     
     # En caso contrario, crea un nuevo usuario
     nuevo_usuario = models.Usuario(
-        nombre=usuario.nombre,
+        nombre_apellido=usuario.nombre,
         identificacion=usuario.identificacion,
         correo=usuario.correo,
         contrasena=security.hash_password(usuario.contrasena) # Hasheamos la contraseña antes de guardarla en la base de datos
@@ -122,7 +122,7 @@ def iniciar_sesion(credenciales: UsuarioLogin, response: Response, db: Session =
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
 
     # Construimos la información que devolveremos al frontend
-    usuario_info = {"usuario_nombre": existe_usuario.nombre, "usuario_identificacion": existe_usuario.identificacion}
+    usuario_info = {"usuario_nombre": existe_usuario.nombre_apellido, "usuario_identificacion": existe_usuario.identificacion}
 
     rol = db.query(models.Administrativo).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
     if rol:
@@ -131,7 +131,7 @@ def iniciar_sesion(credenciales: UsuarioLogin, response: Response, db: Session =
         estudiante = db.query(models.Estudiante).join(models.Usuario).filter(models.Usuario.identificacion == credenciales.identificacion).first()
         if estudiante:
             semestre = estudiante.semestre if estudiante else None
-            carrera = estudiante.carrera.nombre if estudiante and estudiante.carrera else None
+            carrera = estudiante.nombre_carrera.value if estudiante and estudiante.nombre_carrera else None
             usuario_info.update({"semestre": semestre, "carrera": carrera, "rol": "Estudiante"})
         else:
             usuario_info.update({"rol": "Indefinido"})
@@ -139,7 +139,7 @@ def iniciar_sesion(credenciales: UsuarioLogin, response: Response, db: Session =
     # Payload mínimo para el token (puedes añadir más claims si los necesitas)
     token_payload = {
         "sub": str(existe_usuario.identificacion),
-        "usuario_nombre": existe_usuario.nombre,
+        "usuario_nombre": existe_usuario.nombre_apellido,
         "identificacion": existe_usuario.identificacion,
         "rol": usuario_info.get("rol"),
         "area": usuario_info.get("area")
@@ -283,7 +283,6 @@ def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, d
             horario_id=horario.id,
             usuario_id=usuario.id,
             fecha_inscripcion=datetime.now(),
-            estado=True
         )
         db.add(nueva_inscripcion)
         # Decrementamos el cupo disponible si es aplicable
@@ -336,7 +335,7 @@ def reporte_cursos(identificacion: int, tipo_curso: Union[models.TipoCurso, None
             for inscripcion in horario.inscripcion:
                 usuario = db.query(models.Usuario).filter(models.Usuario.id == inscripcion.usuario_id).first()
                 usuario_info = {
-                    "nombre": usuario.nombre,
+                    "nombre": usuario.nombre_apellido,
                     "identificacion": usuario.identificacion,
                     "correo": usuario.correo
                 }
@@ -571,7 +570,7 @@ def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_area: str, db: Sess
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
     # Verifica si usuario ya tiene el rol de administrativo
-    administrativo_existente = db.query(models.Administrativo).filter(models.Administrativo.id == usuario_existente.identificacion).first()
+    administrativo_existente = db.query(models.Administrativo).filter(models.Administrativo.id == usuario_existente.id).first()
     
     # Si existe rol en administrativo eliminamos el rol
     if administrativo_existente:
@@ -582,8 +581,8 @@ def modificar_rol(identificacion: int, nuevo_rol: str, nuevo_area: str, db: Sess
         # Si no existe, creamos el rol de administrativo
         nuevo_administrativo = models.Administrativo(
             id=usuario_existente.id,
-            area=nuevo_rol,
-            rol=nuevo_area
+            area=nuevo_area,
+            rol=nuevo_rol
         )
         db.add(nuevo_administrativo)
         db.commit()
