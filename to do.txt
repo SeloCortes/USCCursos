@@ -6,3 +6,5 @@ Cambiar Class 'Cursos' para que la variable imagen permita subir un archivo y no
 
 
 Pendiente hacer cambios en main para ajustar los cambios en models
+
+agregar solicitud de validacion de token para cada Endpoints

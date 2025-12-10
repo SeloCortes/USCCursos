@@ -43,8 +43,8 @@ db_dependency = Annotated[Session, Depends(get_db)]
 app.add_middleware(
     CORSMiddleware,
     # Temporalmente permitir todos los orígenes para depuración. Revertir a origen específico en producción.
-    allow_origins=["https://prueba-9bc0e.web.app/"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
