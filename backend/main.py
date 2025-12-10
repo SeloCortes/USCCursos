@@ -141,8 +141,8 @@ def iniciar_sesion(credenciales: UsuarioLogin, response: Response, db: Session =
         "sub": str(existe_usuario.identificacion),
         "usuario_nombre": existe_usuario.nombre_apellido,
         "identificacion": existe_usuario.identificacion,
-        "rol": usuario_info.get("rol"),
-        "area": usuario_info.get("area")
+        "rol": usuario_info.get("rol").value if isinstance(usuario_info.get("rol"), Enum) else usuario_info.get("rol"),
+        "area": usuario_info.get("area").value if isinstance(usuario_info.get("area"), Enum) else usuario_info.get("area"),
     }
 
     access_token = security.create_access_token(token_payload)
