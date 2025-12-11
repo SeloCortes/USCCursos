@@ -1,5 +1,6 @@
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
+
 
 def hora_colombia():
-    return datetime.now(pytz.timezone("America/Bogota"))
+    return datetime.now(ZoneInfo("America/Bogota"))
