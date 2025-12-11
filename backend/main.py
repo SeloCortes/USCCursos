@@ -2,6 +2,9 @@
 import security
 import models
 import io
+
+from utilidades.time import hora_colombia
+
 from openpyxl import Workbook
 from fastapi.responses import StreamingResponse
 
@@ -13,7 +16,6 @@ from enum import Enum
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
-
 
 
 
@@ -282,7 +284,7 @@ def gestionar_inscripcion(horario_id: int, curso_id: int, identificacion: int, d
         nueva_inscripcion = models.Inscripcion(
             horario_id=horario.id,
             usuario_id=usuario.id,
-            fecha_inscripcion=datetime.now(),
+            fecha_inscripcion=hora_colombia(),
         )
         db.add(nueva_inscripcion)
         # Decrementamos el cupo disponible si es aplicable
@@ -391,7 +393,7 @@ def reporte_cursos_excel(identificacion: int, tipo_curso: Union[models.TipoCurso
                             horario.hora_fin.isoformat() if horario.hora_fin else None,
                             horario.profesor,
                             cantidad,
-                            usuario.nombre if usuario else None,
+                            usuario.nombre_apellido if usuario else None,
                             usuario.identificacion if usuario else None,
                             usuario.correo if usuario else None,
                             inscripcion.fecha_inscripcion.isoformat() if inscripcion.fecha_inscripcion else None
